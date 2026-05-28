@@ -1,0 +1,9 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart tomcat
+  service:
+    name: "{{ tomcat_service }}"
+    state: restarted

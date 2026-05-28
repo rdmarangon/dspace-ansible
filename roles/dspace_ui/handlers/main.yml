@@ -1,0 +1,10 @@
+---
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: restart dspace-ui
+  service:
+    name: "{{ dspace_ui_service }}"
+    state: restarted

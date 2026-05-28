@@ -1,0 +1,90 @@
+---
+- name: instala Java (pre-requisito do Solr)
+  apt:
+      name: "{{ java_package }}"
+      state: present
+      update_cache: yes
+
+- name: cria usuario de sistema para o Solr
+  user:
+      name: "{{ solr_user }}"
+      home: "{{ solr_install_dir }}"
+      shell: /bin/bash
+      system: yes
+      create_home: no
+
+- name: verifica se o Solr ja esta instalado
+  stat:
+      path: "{{ solr_install_dir }}/bin/solr"
+  register: solr_bin
+
+- name: baixa Solr {{ solr_version }}
+  get_url:
+      url: "https://dlcdn.apache.org/solr/solr/{{ solr_version }}/solr-{{ solr_version }}.tgz"
+      dest: "/tmp/solr-{{ solr_version }}.tgz"
+      checksum: "sha512:23915ba0c9eba81d9ed7dd46bf3dfa748a1cf12cfd1d2bc3c37e3022893b8d45a6d6dc078ee79e33c0367191c3e4f2d1df3c6f5705331ccfe13d6b1287812eb0"
+      mode: "0644"
+      timeout: 600
+  when: not solr_bin.stat.exists
+
+- name: extrai script de instalacao do Solr
+  shell: >
+      tar xzf /tmp/solr-{{ solr_version }}.tgz
+      --strip-components=2
+      -C /tmp
+      solr-{{ solr_version }}/bin/install_solr_service.sh
+  when: not solr_bin.stat.exists
+
+- name: instala Solr como servico
+  command: >
+      bash /tmp/install_solr_service.sh
+      /tmp/solr-{{ solr_version }}.tgz
+      -i {{ solr_install_dir | dirname }}
+      -d {{ solr_data_dir }}
+      -u {{ solr_user }}
+      -s solr
+      -p {{ solr_port }}
+      -n
+  args:
+      creates: "{{ solr_install_dir }}/bin/solr"
+  when: not solr_bin.stat.exists
+
+# Solr 9.x usa Jetty embutido. -Djetty.host restringe o bind ao localhost.
+- name: configura Solr para escutar apenas em localhost (via Jetty)
+  lineinfile:
+      path: /etc/default/solr.in.sh
+      regexp: "^#?SOLR_JETTY_HOST="
+      line: 'SOLR_JETTY_HOST="127.0.0.1"'
+  notify: restart solr
+
+# analysis-extras e necessario para ICUFoldingFilterFactory usado no schema.xml do DSpace
+- name: habilita modulo analysis-extras do Solr
+  lineinfile:
+      path: /etc/default/solr.in.sh
+      regexp: "^#?SOLR_MODULES="
+      line: 'SOLR_MODULES=analysis-extras'
+  notify: restart solr
+
+# Limites de sistema recomendados para o Solr em producao
+- name: configura limites de sistema para o usuario solr
+  copy:
+      dest: /etc/security/limits.d/solr.conf
+      content: |
+          solr  soft  nofile  65000
+          solr  hard  nofile  65000
+          solr  soft  nproc   65000
+          solr  hard  nproc   65000
+      mode: "0644"
+
+- name: cria symlink para os logs do Solr
+  file:
+      src: /var/solr/logs
+      dest: /var/log/solr
+      state: link
+      force: yes
+
+- name: garante que o Solr esta iniciado e habilitado
+  service:
+      name: solr
+      state: started
+      enabled: yes

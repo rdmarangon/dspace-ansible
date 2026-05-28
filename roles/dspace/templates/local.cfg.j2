@@ -1,0 +1,87 @@
+##########################
+# BANCO DE DADOS         #
+##########################
+db.url = jdbc:postgresql://{{ db_host }}:5432/{{ db_name }}
+db.username = {{ db_user }}
+db.password = {{ db_password }}
+db.maxconnections = 30
+db.minconnections = 5
+
+##########################
+# SOLR                   #
+##########################
+# Solr roda na mesma maquina que o backend
+solr.server = http://localhost:{{ solr_port }}/solr
+statistics.solr.server = http://localhost:{{ solr_port }}/solr/statistics
+authority.solr.server = http://localhost:{{ solr_port }}/solr/authority
+
+##########################
+# NOME DO SITE           #
+##########################
+dspace.name = {{ dspace_name }}
+dspace.server.url = {{ dspace_server_url }}
+dspace.ui.url = {{ dspace_ui_url }}
+
+##########################
+# PROXY / REDE           #
+##########################
+useProxies = true
+server.use-forward-headers = true
+# O nginx do frontend faz o proxy reverso
+proxies.trusted.ipranges = {{ frontend_host_ip }}/32
+
+##########################
+# CORS                   #
+##########################
+rest.cors.allowed-origins = {{ dspace_ui_url }}
+rest.cors.allow-credentials = true
+rest.cors.allowed-methods = GET,POST,PUT,PATCH,DELETE,OPTIONS
+rest.cors.allowed-headers = *
+
+##########################
+# FUNCIONALIDADES        #
+##########################
+ldn.enabled = true
+entities.enabled = true
+orcid.enabled = false
+identifier.doi.enable = false
+authentication-ldap.enable = false
+swordv2-server.enabled = true
+oai.enable = true
+
+##########################
+# IDIOMA E TIMEZONE      #
+##########################
+default.language = pt_BR
+default.timezone = America/Sao_Paulo
+
+##########################
+# EMAIL / SMTP           #
+##########################
+mail.server = {{ mail_server }}
+mail.server.port = {{ mail_port }}
+mail.server.username =
+mail.server.password =
+mail.server.protocol = smtp
+mail.admin = {{ mail_admin }}
+mail.from.address = {{ mail_from }}
+feedback.recipient = {{ mail_admin }}
+
+##########################
+# HANDLE                 #
+##########################
+handle.canonical.prefix = {{ dspace_server_url }}/handle/
+
+{% if geoip_enabled | default(false) %}
+##########################
+# GEOIP                  #
+##########################
+usage-statistics.dbfile = {{ geoip_dir }}/dbip-city-lite.mmdb
+
+{% endif %}
+##########################
+# AUTENTICACAO           #
+##########################
+plugin.sequence.org.dspace.authenticate.AuthenticationMethod = \
+ org.dspace.authenticate.PasswordAuthentication
+authentication-password.login.specialgroup =

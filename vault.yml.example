@@ -1,0 +1,3 @@
+# Copie para vault.yml e criptografe com: ansible-vault encrypt vault.yml
+---
+vault_db_password: "troque-por-senha-forte"

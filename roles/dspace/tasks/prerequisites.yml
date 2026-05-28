@@ -1,0 +1,85 @@
+---
+- name: instala Java
+  apt:
+      name: "{{ java_package }}"
+      state: present
+      update_cache: yes
+
+- name: instala Ant
+  apt:
+      name: ant
+      state: present
+
+- name: verifica se o Maven ja esta instalado
+  stat:
+      path: "/opt/apache-maven-{{ maven_version }}/bin/mvn"
+  register: maven_bin
+
+- name: baixa Maven {{ maven_version }}
+  get_url:
+      url: "https://dlcdn.apache.org/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz"
+      dest: "/tmp/maven-{{ maven_version }}.tar.gz"
+      checksum: "sha512:831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6"
+      mode: "0644"
+      timeout: 300
+  when: not maven_bin.stat.exists
+
+- name: instala Maven
+  unarchive:
+      src: "/tmp/maven-{{ maven_version }}.tar.gz"
+      dest: /opt
+      remote_src: yes
+      creates: "/opt/apache-maven-{{ maven_version }}"
+  when: not maven_bin.stat.exists
+
+- name: cria symlink /opt/maven
+  file:
+      src: "/opt/apache-maven-{{ maven_version }}"
+      dest: /opt/maven
+      state: link
+
+- name: adiciona Maven ao PATH via profile.d
+  copy:
+      content: |
+          export MAVEN_HOME=/opt/maven
+          export PATH=$MAVEN_HOME/bin:$PATH
+      dest: /etc/profile.d/maven.sh
+      mode: "0644"
+
+- name: cria grupo dspace
+  group:
+      name: "{{ dspace_group }}"
+      state: present
+
+- name: cria usuario de sistema dspace
+  user:
+      name: "{{ dspace_user }}"
+      group: "{{ dspace_group }}"
+      home: "{{ dspace_install_dir }}"
+      shell: /usr/sbin/nologin
+      system: yes
+      create_home: no
+
+- name: cria diretorio de instalacao
+  file:
+      path: "{{ dspace_install_dir }}"
+      state: directory
+      owner: "{{ dspace_user }}"
+      group: "{{ dspace_group }}"
+      mode: "0755"
+
+- name: cria diretorio assetstore
+  file:
+      path: "{{ dspace_install_dir }}/assetstore"
+      state: directory
+      owner: "{{ dspace_user }}"
+      group: "{{ dspace_group }}"
+      mode: "0750"
+
+- name: cria diretorio sitemaps
+  file:
+      path: "{{ dspace_install_dir }}/sitemaps"
+      state: directory
+      owner: "{{ dspace_user }}"
+      group: "{{ dspace_group }}"
+      mode: "0755"

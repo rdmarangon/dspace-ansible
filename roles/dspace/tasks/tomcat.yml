@@ -1,0 +1,54 @@
+---
+- name: instala Tomcat {{ tomcat_version }}
+  apt:
+    name: "tomcat{{ tomcat_version }}"
+    state: present
+    update_cache: yes
+
+- name: configura JAVA_OPTS do Tomcat (heap, encoding)
+  lineinfile:
+    path: "/etc/default/tomcat{{ tomcat_version }}"
+    regexp: "^#?JAVA_OPTS="
+    line: 'JAVA_OPTS="{{ tomcat_java_opts }} -Djava.awt.headless=true"'
+  notify: restart tomcat
+
+# O DSpace grava logs e configs em dspace_install_dir; o Tomcat precisa de acesso
+- name: adiciona tomcat ao grupo dspace
+  user:
+    name: "tomcat{{ tomcat_version }}"
+    groups: "{{ dspace_group }}"
+    append: yes
+
+- name: cria symlink do webapp DSpace no Tomcat
+  file:
+    src: "{{ dspace_install_dir }}/webapps/server"
+    dest: "{{ tomcat_webapps }}/server"
+    state: link
+    force: yes
+  notify: restart tomcat
+
+# O DSpace grava no seu proprio diretorio; o systemd bloqueia isso por padrao
+- name: adiciona ReadWritePaths ao servico do Tomcat
+  ini_file:
+    path: "/lib/systemd/system/{{ tomcat_service }}.service"
+    section: Service
+    option: ReadWritePaths
+    value: "{{ dspace_install_dir }}/"
+    no_extra_spaces: yes
+  notify:
+    - reload systemd
+    - restart tomcat
+
+- name: garante que o Tomcat esta iniciado e habilitado
+  service:
+    name: "{{ tomcat_service }}"
+    state: started
+    enabled: yes
+
+# Firewall: Tomcat escuta em todas as interfaces mas so o frontend pode acessar
+- name: permite porta {{ dspace_backend_port }} apenas para o frontend
+  ufw:
+    rule: allow
+    src: "{{ frontend_host_ip }}"
+    port: "{{ dspace_backend_port }}"
+    proto: tcp

@@ -1,0 +1,36 @@
+---
+# Sincroniza o assetstore do DSpace a partir da maquina de controle.
+# Usa rsync incremental — execucoes subsequentes transferem apenas o que mudou.
+#
+# Uso:
+#   ansible-playbook playbooks/sync_assetstore.yml \
+#     --extra-vars "assetstore_src=/home/rodrigo/assetstore" \
+#     --ask-vault-pass
+
+- name: sincroniza assetstore para o backend
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  vars:
+    assetstore_src: ""
+  tasks:
+    - name: valida parametro assetstore_src
+      fail:
+        msg: 'Passe o caminho local via --extra-vars "assetstore_src=/caminho/para/assetstore"'
+      when: assetstore_src == ""
+
+    - name: sincroniza assetstore (pode levar bastante tempo na primeira execucao)
+      synchronize:
+        src: "{{ assetstore_src }}/"
+        dest: "{{ dspace_install_dir }}/assetstore/"
+        delete: yes
+        recursive: yes
+      register: assetstore_sync
+
+    - name: ajusta dono do assetstore
+      file:
+        path: "{{ dspace_install_dir }}/assetstore"
+        owner: "{{ dspace_user }}"
+        group: "{{ dspace_group }}"
+        recurse: yes
+      when: assetstore_sync.changed

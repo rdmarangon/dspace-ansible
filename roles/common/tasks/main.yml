@@ -1,0 +1,37 @@
+---
+- name: set timezone
+  community.general.timezone:
+      name: "{{ timezone }}"
+
+- name: update apt cache
+  apt:
+      update_cache: yes
+      cache_valid_time: 3600
+
+- name: install base packages
+  apt:
+      name:
+          - ufw
+          - ca-certificates
+          - locales
+          - rsync
+          - gnupg
+          - sudo
+      state: present
+
+- name: gera locale pt_BR.UTF-8
+  community.general.locale_gen:
+      name: pt_BR.UTF-8
+      state: present
+
+- name: libera SSH no ufw
+  ufw:
+      rule: allow
+      port: "22"
+      proto: tcp
+
+- name: habilita ufw com politica padrao deny
+  ufw:
+      state: enabled
+      policy: deny
+      direction: incoming

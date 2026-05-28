@@ -1,0 +1,63 @@
+---
+- name: instala wget (necessario para o cron de atualizacao mensal)
+  apt:
+    name: wget
+    state: present
+
+- name: cria diretorio geoip
+  file:
+    path: "{{ geoip_dir }}"
+    state: directory
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_group }}"
+    mode: "0750"
+
+- name: verifica se base GeoIP do mes atual ja existe
+  stat:
+    path: "{{ geoip_dir }}/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb"
+  register: geoip_mmdb
+
+- name: baixa base DB-IP do mes atual
+  get_url:
+    url: "https://download.db-ip.com/free/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb.gz"
+    dest: "{{ geoip_dir }}/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb.gz"
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_group }}"
+    mode: "0640"
+  when: not geoip_mmdb.stat.exists
+  register: geoip_download
+
+- name: descomprime base DB-IP
+  command: >
+    gunzip -f {{ geoip_dir }}/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb.gz
+  when: geoip_download is changed
+
+- name: ajusta dono do arquivo descomprimido
+  file:
+    path: "{{ geoip_dir }}/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb"
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_group }}"
+    mode: "0640"
+  when: geoip_download is changed
+
+- name: atualiza symlink para a base do mes atual
+  file:
+    src: "{{ geoip_dir }}/dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb"
+    dest: "{{ geoip_dir }}/dbip-city-lite.mmdb"
+    state: link
+    force: yes
+
+- name: configura cron mensal de atualizacao da base GeoIP
+  cron:
+    name: "atualiza base GeoIP DB-IP"
+    minute: "0"
+    hour: "3"
+    day: "2"
+    user: "{{ dspace_user }}"
+    job: >-
+      ANO=$(date +\%Y) && MES=$(date +\%m) &&
+      [ -f {{ geoip_dir }}/dbip-city-lite-${ANO}-${MES}.mmdb ] ||
+      (wget -q -O {{ geoip_dir }}/dbip-city-lite-${ANO}-${MES}.mmdb.gz
+      https://download.db-ip.com/free/dbip-city-lite-${ANO}-${MES}.mmdb.gz &&
+      gunzip -f {{ geoip_dir }}/dbip-city-lite-${ANO}-${MES}.mmdb.gz &&
+      ln -sf {{ geoip_dir }}/dbip-city-lite-${ANO}-${MES}.mmdb {{ geoip_dir }}/dbip-city-lite.mmdb)

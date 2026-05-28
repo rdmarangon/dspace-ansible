@@ -1,0 +1,80 @@
+---
+- name: instala python3-psycopg2 (dependencia dos modulos Ansible postgresql)
+  apt:
+    name: python3-psycopg2
+    state: present
+
+- name: adiciona chave GPG do repositorio PostgreSQL
+  get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: /etc/apt/keyrings/pgdg.asc
+    mode: "0644"
+
+- name: adiciona repositorio oficial do PostgreSQL
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/pgdg.asc] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+    state: present
+    filename: pgdg
+    update_cache: yes
+
+- name: instala postgresql {{ postgresql_version }}
+  apt:
+    name:
+      - "postgresql-{{ postgresql_version }}"
+      - "postgresql-client-{{ postgresql_version }}"
+      - "postgresql-contrib" # fornece pgcrypto, exigido pelo DSpace
+    state: present
+
+- name: garante que o postgresql esta iniciado e habilitado
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: cria usuario do banco
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    state: present
+
+- name: cria banco de dados
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    encoding: UTF-8
+    lc_collate: "pt_BR.UTF-8"
+    lc_ctype: "pt_BR.UTF-8"
+    template: template0
+    state: present
+
+- name: habilita extensao pgcrypto no banco dspace
+  become_user: postgres
+  community.postgresql.postgresql_ext:
+    name: pgcrypto
+    db: "{{ db_name }}"
+    state: present
+
+- name: deploy pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: "0640"
+  notify: restart postgresql
+
+- name: configura listen_addresses
+  lineinfile:
+    path: "/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '{{ postgresql_listen_addresses | default('localhost') }}'"
+  notify: restart postgresql
+
+- name: libera porta 5432 no ufw apenas para o backend
+  ufw:
+    rule: allow
+    src: "{{ backend_host_cidr }}"
+    port: "5432"
+    proto: tcp

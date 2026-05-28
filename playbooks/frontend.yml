@@ -1,0 +1,8 @@
+---
+- name: configura servidor de frontend (Angular SSR + nginx)
+  hosts: frontend
+  vars_files:
+    - ../vault.yml
+  roles:
+    - common
+    - dspace_ui

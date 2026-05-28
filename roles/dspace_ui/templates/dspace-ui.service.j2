@@ -1,0 +1,19 @@
+[Unit]
+Description=DSpace Angular SSR
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory={{ dspace_angular_src }}
+ExecStart=/usr/bin/node --stack-size=65536 dist/server/main.js
+Environment=NODE_ENV=production
+# Porta configurada em config.prod.yml (ui.port)
+Environment=PORT={{ dspace_ui_port }}
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

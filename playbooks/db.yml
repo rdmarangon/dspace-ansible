@@ -1,0 +1,8 @@
+---
+- name: configura servidor de banco de dados
+  hosts: db
+  vars_files:
+    - ../vault.yml
+  roles:
+    - common
+    - postgresql

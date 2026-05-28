@@ -1,0 +1,10 @@
+---
+postgresql_version:          18
+postgresql_listen_addresses: "localhost, {{ ansible_host }}"
+
+db_name:            dspace
+db_user:            dspace
+db_password:        "{{ vault_db_password }}"
+
+# CIDR do host do backend para pg_hba.conf — permite conexões somente dele
+backend_host_cidr:  "{{ hostvars[groups['backend'][0]]['ansible_host'] }}/32"

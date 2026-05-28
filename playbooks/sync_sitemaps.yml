@@ -1,0 +1,38 @@
+---
+# Sincroniza sitemaps gerados pelo DSpace (backend) para o nginx (frontend).
+# O fluxo passa pela maquina de controle: pull do backend, push para o frontend.
+#
+# Uso:
+#   ansible-playbook playbooks/sync_sitemaps.yml --ask-vault-pass
+#
+# Rode apos cada execucao de generate-sitemaps.
+
+- name: busca sitemaps do backend
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  tasks:
+    - name: copia sitemaps para a maquina de controle
+      synchronize:
+        src: "{{ dspace_install_dir }}/sitemaps/"
+        dest: "/tmp/dspace_sitemaps_sync/"
+        mode: pull
+        delete: yes
+
+- name: envia sitemaps para o frontend
+  hosts: frontend
+  vars_files:
+    - ../vault.yml
+  tasks:
+    - name: envia sitemaps para o nginx
+      synchronize:
+        src: "/tmp/dspace_sitemaps_sync/"
+        dest: "{{ sitemaps_dir }}/"
+        delete: yes
+
+    - name: ajusta dono dos sitemaps
+      file:
+        path: "{{ sitemaps_dir }}"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        recurse: yes

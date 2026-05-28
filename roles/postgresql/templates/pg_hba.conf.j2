@@ -1,0 +1,6 @@
+# Managed by Ansible — do not edit manually
+# TYPE  DATABASE        USER            ADDRESS                         METHOD
+local   all             postgres                                        peer
+local   all             all                                             peer
+host    {{ db_name }}   {{ db_user }}   127.0.0.1/32                    scram-sha-256
+host    {{ db_name }}   {{ db_user }}   {{ backend_host_cidr }}         scram-sha-256

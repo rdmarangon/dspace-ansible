@@ -1,0 +1,23 @@
+---
+all:
+  children:
+    db:
+      hosts:
+        dspace-db:
+          ansible_host: 127.0.0.1
+          ansible_connection: local
+          dspace_hostname: "10.4.1.181"
+
+    backend:
+      hosts:
+        dspace-backend:
+          ansible_host: 127.0.0.1
+          ansible_connection: local
+          dspace_hostname: "10.4.1.181"
+
+    frontend:
+      hosts:
+        dspace-frontend:
+          ansible_host: 127.0.0.1
+          ansible_connection: local
+          dspace_hostname: "10.4.1.181"

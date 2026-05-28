@@ -1,0 +1,28 @@
+---
+java_package:       "openjdk-21-jdk-headless"
+java_home:          "/usr/lib/jvm/java-21-openjdk-amd64"
+maven_version:      "3.9.16"
+
+tomcat_version:     10
+tomcat_service:     "tomcat10"
+tomcat_webapps:     "/var/lib/tomcat10/webapps"
+tomcat_conf_dir:    "/etc/tomcat10"
+# Memória heap do Tomcat — ajuste conforme o servidor
+tomcat_java_opts:   "-Xmx2g -Xms512m -Dfile.encoding=UTF-8"
+
+solr_version:       "9.10.1"
+solr_port:          8983
+solr_install_dir:   "/opt/solr"
+solr_data_dir:      "/var/solr/data"
+solr_user:          "solr"
+
+db_host:             "{{ hostvars[groups['db'][0]]['ansible_host'] }}"
+db_name:             dspace
+db_user:             dspace
+db_password:         "{{ vault_db_password }}"
+
+# IP da máquina do frontend — UFW permite somente ela na porta 8080
+frontend_host_ip:   "{{ hostvars[groups['frontend'][0]]['ansible_host'] }}"
+
+geoip_enabled:      true
+geoip_dir:          "{{ dspace_install_dir }}/geoip"

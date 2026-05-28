@@ -1,0 +1,28 @@
+---
+# Reconstrói o índice do Solr a partir do banco de dados.
+# Necessário após restaurar um dump ou após migração de schema.
+#
+# Uso: ansible-playbook playbooks/reindex.yml
+
+- name: reconstroi indice Solr
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  tasks:
+    - name: para tomcat antes de reindexar
+      service:
+        name: "{{ tomcat_service }}"
+        state: stopped
+
+    - name: executa index-discovery completo (pode levar horas em acervos grandes)
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace index-discovery -b"
+      async: 14400
+      poll: 60
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: inicia tomcat
+      service:
+        name: "{{ tomcat_service }}"
+        state: started

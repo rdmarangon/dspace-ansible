@@ -1,0 +1,110 @@
+server {
+    listen {{ nginx_http_port }};
+    server_name {{ dspace_hostname }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen {{ nginx_https_port }} ssl;
+    server_name {{ dspace_hostname }};
+
+    ssl_certificate     {{ ssl_cert_path }};
+    ssl_certificate_key {{ ssl_key_path }};
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # Cabecalhos de seguranca
+    add_header X-Frame-Options           "SAMEORIGIN"                               always;
+    add_header X-Content-Type-Options    "nosniff"                                  always;
+    add_header X-XSS-Protection          "1; mode=block"                            always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin"          always;
+    add_header Permissions-Policy        "geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    set $upstream_ui  http://127.0.0.1:{{ dspace_ui_port }};
+    set $upstream_api http://{{ backend_host }}:{{ dspace_backend_port }};
+
+    # Bloqueia user-agents vazios e scanners conhecidos
+    if ($http_user_agent = "") {
+        return 444;
+    }
+    if ($http_user_agent ~* (nikto|sqlmap|nmap|masscan|zgrab|nessus|openvas|dirbuster|gobuster|wfuzz|hydra|medusa|burpsuite|nuclei|acunetix|netsparker|appscan|webinspect|havij|libwww-perl|python-requests|go-http-client|zgrab2|scrapy|mechanize)) {
+        return 444;
+    }
+
+    # Bloqueia arquivos ocultos (exceto .well-known)
+    location ~ ^/\.(?!well-known(?:/|$)) {
+        return 444;
+    }
+
+    # Bloqueia path traversal e extensoes sensiveis
+    location ~* (\.\.\/|\.\.\\\\) {
+        return 444;
+    }
+    location ~* \.(env|ini|log|conf|sql|bak|old|swp|dist)$ {
+        return 444;
+    }
+
+    # Bloqueia Spring Boot Actuator
+    location ~* ^/server/actuator {
+        return 444;
+    }
+
+    # Rate limiting no login
+    location = /server/api/authn/login {
+        limit_req zone=auth burst=5 nodelay;
+        proxy_pass $upstream_api/server/api/authn/login;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Redirect legacy /jspui (DSpace 6.3)
+    location ~ ^/jspui/(.*)$ {
+        return 301 /$1;
+    }
+
+    # Sitemaps — servidos direto do disco, sem passar pelo Node
+    # Os arquivos precisam ser sincronizados do backend via rsync (ver README)
+    location = /sitemap_index.xml {
+        alias {{ sitemaps_dir }}/sitemap_index.xml;
+        expires 1d;
+        add_header Cache-Control "public";
+    }
+
+    location = /sitemap_index.html {
+        alias {{ sitemaps_dir }}/sitemap_index.html;
+        expires 1d;
+        add_header Cache-Control "public";
+    }
+
+    location ~ ^/sitemap\d+\.(xml|html)$ {
+        root {{ sitemaps_dir }};
+        expires 1d;
+        add_header Cache-Control "public";
+    }
+
+    # Backend REST API
+    # SEM trailing slash no proxy_pass para evitar /server//api/...
+    location /server {
+        proxy_pass $upstream_api;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 512M;
+        proxy_read_timeout   300s;
+    }
+
+    # Frontend Angular SSR (Node.js)
+    location / {
+        proxy_pass $upstream_ui;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout                 120s;
+    }
+}

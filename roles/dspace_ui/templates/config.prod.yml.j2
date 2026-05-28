@@ -1,0 +1,77 @@
+production: true
+
+# URL publica da API REST — usada pelo browser para chamadas HTTP.
+# nginx faz SSL termination e encaminha /server para o backend.
+rest:
+    ssl: true
+    host: {{ dspace_hostname }}
+    port: 443
+    nameSpace: /server
+    # URL interna para o SSR chamar o backend diretamente (sem passar pelo nginx).
+    ssrBaseUrl: http://{{ backend_host }}:{{ dspace_backend_port }}/server
+
+ssr:
+    inlineCriticalCss: true
+    transferState: true
+    replaceRestUrl: true
+    # Paginas pesadas servidas como CSR puro para nao sobrecarregar o servidor
+    excludePathPatterns:
+        - pattern: "^/$"
+        - pattern: "^/communities/[a-f0-9-]{36}/browse(/.*)?$"
+          flag: "i"
+        - pattern: "^/collections/[a-f0-9-]{36}/browse(/.*)?$"
+          flag: "i"
+        - pattern: "^/browse/"
+        - pattern: "^/search$"
+        - pattern: "^/community-list$"
+        - pattern: "^/admin/"
+        - pattern: "^/processes/?"
+        - pattern: "^/notifications/"
+        - pattern: "^/statistics/?"
+        - pattern: "^/access-control/"
+        - pattern: "^/health$"
+    enableSearchComponent: false
+    enableBrowseComponent: false
+
+# Node.js escuta em porta interna; nginx faz SSL termination e expoe :443
+ui:
+    ssl: false
+    host: 127.0.0.1
+    port: {{ dspace_ui_port }}
+    nameSpace: /
+    baseUrl: https://{{ dspace_hostname }}
+
+defaultLanguage: pt_BR
+
+themes:
+    - name: dspace
+      headTags:
+          - tagName: meta
+            attributes:
+                name: theme-color
+                content: "#00457c"
+
+auth:
+    ui:
+        timeUntilIdle: 900000
+        idleGracePeriod: 300000
+
+info:
+    enableEndUserAgreement: true
+    enablePrivacyStatement: true
+    enableCOARNotifySupport: true
+    enableCookieConsentPopup: true
+
+geospatialMapViewer:
+    spatialMetadataFields:
+        - "dcterms.spatial"
+    spatialFacetDiscoveryConfiguration: "geospatial"
+    spatialPointFilterName: "point"
+    enableItemPageFields: false
+    enableBrowseMap: false
+    enableSearchViewMode: false
+    tileProviders:
+        - "OpenStreetMap.Mapnik"
+    defaultCentrePoint:
+        lat: {{ geospatial_default_lat }}
+        lng: {{ geospatial_default_lng }}

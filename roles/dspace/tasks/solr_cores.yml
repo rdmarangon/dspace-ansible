@@ -1,0 +1,42 @@
+---
+# install_solr_service.sh -d /var/solr/data define SOLR_HOME=/var/solr/data/data
+# (acrescenta /data ao valor de -d). Os cores sao descobertos automaticamente
+# pelo Solr via core.properties em cada subdiretorio do SOLR_HOME.
+
+- name: copia configs dos cores para o SOLR_HOME
+  copy:
+    src: "{{ dspace_install_dir }}/solr/{{ item }}/"
+    dest: "{{ solr_data_dir }}/data/{{ item }}/"
+    remote_src: yes
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+  loop:
+    - authority
+    - search
+    - statistics
+    - oai
+  notify: restart solr
+
+- name: cria core.properties para cada core
+  copy:
+    content: "name={{ item }}\n"
+    dest: "{{ solr_data_dir }}/data/{{ item }}/core.properties"
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+    mode: "0640"
+  loop:
+    - authority
+    - search
+    - statistics
+    - oai
+  notify: restart solr
+
+- name: reinicia Solr para carregar os cores
+  meta: flush_handlers
+
+- name: aguarda Solr responder na porta
+  wait_for:
+    host: localhost
+    port: "{{ solr_port }}"
+    delay: 5
+    timeout: 60

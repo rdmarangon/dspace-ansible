@@ -1,0 +1,4 @@
+---
+- import_playbook: playbooks/db.yml
+- import_playbook: playbooks/backend.yml
+- import_playbook: playbooks/frontend.yml

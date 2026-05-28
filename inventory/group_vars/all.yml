@@ -1,0 +1,19 @@
+---
+timezone:           "America/Sao_Paulo"
+
+dspace_backend_port: 8080
+
+dspace_version:     "9.0"
+dspace_install_dir: "/dspace"
+dspace_user:        "dspace"
+dspace_group:       "dspace"
+
+dspace_hostname:    "repositorio.ufjf.br"
+dspace_name:        "Repositório Institucional UFJF"
+dspace_server_url:  "https://{{ dspace_hostname }}/server"
+dspace_ui_url:      "https://{{ dspace_hostname }}"
+
+mail_server:        "smtp.cgco.ufjf.br"
+mail_port:          25
+mail_admin:         "admin@repositorio.ufjf.br"
+mail_from:          "noreply@repositorio.ufjf.br"

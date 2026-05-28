@@ -1,0 +1,9 @@
+---
+- name: configura servidor de backend (DSpace + Solr)
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  roles:
+    - common
+    - solr
+    - dspace

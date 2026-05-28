@@ -1,0 +1,8 @@
+---
+- import_tasks: prerequisites.yml
+- import_tasks: configure.yml
+- import_tasks: install.yml
+- import_tasks: tomcat.yml
+- import_tasks: solr_cores.yml
+- import_tasks: geoip.yml
+  when: geoip_enabled | default(false)

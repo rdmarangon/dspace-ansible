@@ -1,0 +1,23 @@
+---
+node_major_version:       20
+dspace_angular_version:   "dspace-9_x"
+dspace_angular_src:       "/opt/dspace-angular"
+dspace_ui_port:           4000
+dspace_ui_service:        "dspace-ui"
+
+nginx_http_port:          80
+nginx_https_port:         443
+ssl_cert_path:            "/etc/ssl/certs/dspace.crt"
+ssl_key_path:             "/etc/ssl/private/dspace.key"
+
+# IP ou hostname da máquina do backend (para SSR chamar a API diretamente)
+backend_host:             "{{ hostvars[groups['backend'][0]]['ansible_host'] }}"
+nginx_user:               "www-data"
+nginx_group:              "www-data"
+
+# Sitemaps gerados pelo DSpace no backend precisam ser sincronizados para ca via rsync
+sitemaps_dir:             "/var/www/sitemaps"
+
+# Reitoria da UFJF — Juiz de Fora/MG
+geospatial_default_lat:   -21.773827
+geospatial_default_lng:   -43.368829

@@ -1,0 +1,19 @@
+# Segredos — só vault.yml.example vai pro repo
+vault.yml
+
+# Ansible
+*.retry
+*.log
+
+# Chaves SSH e certificados
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

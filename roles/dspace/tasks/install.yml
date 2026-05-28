@@ -1,0 +1,57 @@
+---
+- name: verifica se o DSpace ja esta instalado
+  stat:
+    path: "{{ dspace_install_dir }}/bin/dspace"
+  register: dspace_bin
+
+- name: baixa fonte do DSpace {{ dspace_version }}
+  get_url:
+    url: "https://github.com/DSpace/DSpace/archive/refs/tags/dspace-{{ dspace_version }}.tar.gz"
+    dest: "/tmp/dspace-{{ dspace_version }}.tar.gz"
+    mode: "0644"
+    timeout: 600
+  when: not dspace_bin.stat.exists
+
+- name: extrai fonte do DSpace
+  unarchive:
+    src: "/tmp/dspace-{{ dspace_version }}.tar.gz"
+    dest: /tmp
+    remote_src: yes
+    creates: "/tmp/DSpace-dspace-{{ dspace_version }}"
+  when: not dspace_bin.stat.exists
+
+# Build Maven: pode levar de 15 a 30 minutos dependendo da conexao e do servidor.
+# O -DskipTests evita rodar os testes unitarios, acelerando o build.
+- name: build DSpace com Maven (15-30 min na primeira execucao)
+  command: >
+    /opt/maven/bin/mvn -B package
+    -Denv=production
+    -DskipTests
+    -Ddspace.dir={{ dspace_install_dir }}
+  args:
+    chdir: "/tmp/DSpace-dspace-{{ dspace_version }}"
+    creates: "/tmp/DSpace-dspace-{{ dspace_version }}/dspace/target/dspace-installer/build.xml"
+  when: not dspace_bin.stat.exists
+  async: 3600
+  poll: 30
+
+- name: instala DSpace com Ant
+  command: /usr/bin/ant -Ddspace.dir={{ dspace_install_dir }} fresh_install
+  args:
+    chdir: "/tmp/DSpace-dspace-{{ dspace_version }}/dspace/target/dspace-installer"
+    creates: "{{ dspace_install_dir }}/bin/dspace"
+  when: not dspace_bin.stat.exists
+
+- name: ajusta dono do diretorio de instalacao
+  file:
+    path: "{{ dspace_install_dir }}"
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_group }}"
+    recurse: yes
+
+- name: inicializa schema do banco (apenas em instalacao nova)
+  become_user: "{{ dspace_user }}"
+  command: "{{ dspace_install_dir }}/bin/dspace database migrate"
+  args:
+    chdir: /tmp
+  when: not dspace_bin.stat.exists

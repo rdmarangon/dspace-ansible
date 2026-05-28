@@ -1,0 +1,137 @@
+---
+# Restaura dump do DSpace no banco e migra o schema para DSpace 9.
+#
+# Pre-requisito: o dump ja deve estar no formato final desejado
+# (sem /jspui, com URL correta, etc).
+#
+# Formato esperado: pg_dump custom (-Fc), gerado com:
+#   pg_dump -Fc -U dspace dspace > dspace.dump
+#
+# Fluxo:
+#   1. Para o Tomcat
+#   2. Dropa o banco existente e recria vazio
+#   3. Importa o dump via pg_restore
+#   4. Roda database migrate ignored
+#   5. Reconstroi indices (index-discovery, oai import, generate-sitemaps)
+#   6. Sobe o Tomcat
+#
+# Uso:
+#   ansible-playbook playbooks/restore_dump.yml \
+#     --extra-vars "dump_local_path=/home/rodrigo/dspace.dump" \
+#     --ask-vault-pass
+
+- name: para o Tomcat
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  tasks:
+    - name: stop tomcat
+      service:
+        name: "{{ tomcat_service }}"
+        state: stopped
+
+- name: restaura dump no banco de dados
+  hosts: db
+  vars_files:
+    - ../vault.yml
+  vars:
+    dump_local_path: ""
+    dump_dest: "/tmp/dspace_restore.dump"
+  tasks:
+    - name: valida parametro dump_local_path
+      fail:
+        msg: 'Passe o caminho do dump via --extra-vars "dump_local_path=/caminho/para/dspace.dump"'
+      when: dump_local_path == ""
+
+    - name: copia dump para o servidor de banco
+      copy:
+        src: "{{ dump_local_path }}"
+        dest: "{{ dump_dest }}"
+        mode: "0600"
+
+    - name: encerra conexoes ativas no banco
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: postgres
+        query: >
+          SELECT pg_terminate_backend(pid)
+          FROM pg_stat_activity
+          WHERE datname = '{{ db_name }}' AND pid <> pg_backend_pid()
+
+    - name: dropa banco existente
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        state: absent
+
+    - name: recria banco vazio
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        encoding: UTF-8
+        lc_collate: "pt_BR.UTF-8"
+        lc_ctype: "pt_BR.UTF-8"
+        template: template0
+        state: present
+
+    - name: importa dump via pg_restore
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        state: restore
+        target: "{{ dump_dest }}"
+        target_opts: "--no-owner --role={{ db_user }}"
+
+    - name: remove dump temporario
+      file:
+        path: "{{ dump_dest }}"
+        state: absent
+
+- name: migra schema e reconstroi indices
+  hosts: backend
+  vars_files:
+    - ../vault.yml
+  tasks:
+    # "ignored" permite migrar mesmo com migrations de versoes anteriores no banco
+    - name: migra schema do banco para DSpace 9
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace database migrate ignored"
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: exibe status do banco apos migracao
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace database info"
+      register: db_info
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: exibe status do banco apos migracao
+      debug:
+        msg: "{{ db_info.stdout_lines }}"
+
+    - name: reconstroi indice Solr (pode levar horas em acervos grandes)
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace index-discovery -b"
+      async: 14400
+      poll: 60
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: reimporta endpoint OAI-PMH
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace oai import"
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: gera sitemaps
+      become_user: "{{ dspace_user }}"
+      command: "{{ dspace_install_dir }}/bin/dspace generate-sitemaps"
+      environment:
+        JAVA_HOME: "{{ java_home }}"
+
+    - name: inicia tomcat
+      service:
+        name: "{{ tomcat_service }}"
+        state: started
