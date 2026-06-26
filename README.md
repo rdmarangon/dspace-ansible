@@ -286,6 +286,30 @@ O `ant fresh_install` cria os diretórios de configuração em `/dspace/solr/` m
 
 DSpace 9 exige a extensão `pgcrypto` no banco. O role instala `postgresql-contrib` (que a fornece) e habilita a extensão com `CREATE EXTENSION pgcrypto` no banco `dspace`.
 
+### Ambiente de teste: não publicar nada externamente
+
+O `testedspace.ufjf.br` é só rede interna UFJF — Google/harvesters não o alcançam, então
+OAI, sitemaps e meta-tags do Google Scholar ficam inertes. O risco real de "publicar pra
+fora" é o **registro automático de DOI** (DataCite/Crossref): depositar um item com o
+minting ligado cria um DOI **real** na agência, independente de rede. Por isso o
+`local.cfg` mantém:
+
+```properties
+identifier.doi.enable = false
+```
+
+> **Ao virar produção:** para emitir DOIs de verdade, ligue `identifier.doi.enable = true`
+> e configure as credenciais do provedor (DataCite/Crossref) em `local.cfg`. Enquanto for
+> teste/homologação, **deixe `false`** para não registrar DOIs reais por engano.
+
+### Configuração de submissão (formulários de depósito)
+
+Os campos do formulário de depósito, dropdowns e o mapeamento coleção→formulário ficam em
+`config/submission-forms.xml` e `config/item-submission.xml`. **Esses arquivos não vêm no
+dump do banco** (o dump traz só os valores e o registro de metadados); o role os deploya a
+partir de `roles/dspace/files/`. O perfil UFJF (tipos de documento, orientador, banca,
+Lattes, CNPq etc.) vive aí. Alterações exigem `restart tomcat`.
+
 ### GeoIP para estatísticas
 
 Controlado pela variável `geoip_enabled` em `inventory/group_vars/backend.yml` (padrão: `true`). Quando ativado, o Ansible baixa a base DB-IP do mês atual, configura o `local.cfg` automaticamente e cria um cron mensal no servidor backend para manter a base atualizada.
@@ -326,8 +350,11 @@ ansible/dspace/
     │   │   ├── install.yml        ← download fonte, mvn package, ant fresh_install
     │   │   ├── tomcat.yml         ← tomcat10, JAVA_OPTS, ReadWritePaths, symlink
     │   │   ├── solr_cores.yml     ← copia configsets + cria cores
-    │   │   ├── configure.yml      ← deploy local.cfg, adiciona tomcat ao grupo dspace
+    │   │   ├── configure.yml      ← deploy local.cfg + forms de submissão, tomcat no grupo dspace
     │   │   └── geoip.yml          ← DB-IP download, symlink, cron (geoip_enabled)
+    │   ├── files/
+    │   │   ├── submission-forms.xml  ← perfil de submissão UFJF (campos, dropdowns, type-bind)
+    │   │   └── item-submission.xml   ← passos do depósito (inclui embargo/access)
     │   └── templates/
     │       └── local.cfg.j2       ← configuração principal do DSpace (db, solr, mail, urls)
     └── dspace_ui/

@@ -57,8 +57,11 @@ auth:
         idleGracePeriod: 300000
 
 info:
-    enableEndUserAgreement: true
-    enablePrivacyStatement: true
+    # Contrato de Usuario e Declaracao de Privacidade desligados: o texto-corpo e fixo
+    # em ingles no componente Angular (nao e traduzivel via i18n) e o repositorio legado
+    # nunca os teve. Reativar so quando a UFJF fornecer os textos em PT (override de tema).
+    enableEndUserAgreement: false
+    enablePrivacyStatement: false
     enableCOARNotifySupport: true
     enableCookieConsentPopup: true
 

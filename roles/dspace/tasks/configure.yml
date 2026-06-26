@@ -21,3 +21,19 @@
     group: "{{ dspace_group }}"
     mode: "0640"
   notify: restart tomcat
+
+# Perfil de submissao UFJF (formularios de deposito). Estes arquivos definem quais
+# campos aparecem no deposito, dropdowns e mapeamento colecao->formulario. NAO vem no
+# dump do banco -- precisam ser deployados em disco. Ler em
+# https://wiki.lyrasis.org/display/DSDOC9x/Submission+User+Interface
+- name: deploy configuracao de submissao (forms UFJF)
+  copy:
+    src: "{{ item }}"
+    dest: "{{ dspace_install_dir }}/config/{{ item }}"
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_group }}"
+    mode: "0644"
+  loop:
+    - submission-forms.xml
+    - item-submission.xml
+  notify: restart tomcat
