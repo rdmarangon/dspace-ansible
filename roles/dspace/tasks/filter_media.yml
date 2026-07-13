@@ -1,15 +1,10 @@
 ---
-# filter-media gera miniaturas (bundle THUMBNAIL) a partir da 1a pagina do PDF/imagens
-# e extrai o texto (bundle TEXT) que alimenta a busca full-text no Solr. Nao roda no
-# deposito -- e um processo batch, por isso itens novos ficam sem miniatura ate rodar.
+# filter-media gera miniaturas (bundle THUMBNAIL) e extrai o texto dos PDFs
+# (bundle TEXT) que alimenta a busca full-text no Solr. Nao roda no deposito --
+# e um processo batch, por isso itens novos ficam sem miniatura ate rodar.
+# Os filtros habilitados no DSpace da UFJF sao Java puro (PDFBoxThumbnail,
+# TikaTextExtractionFilter, JPEGFilter) -- NAO precisam de ImageMagick/Ghostscript.
 # https://wiki.lyrasis.org/display/DSDOC9x/Mediafilters+for+Transforming+DSpace+Content
-
-- name: instala ImageMagick e Ghostscript (miniatura de PDF)
-  apt:
-    name:
-      - imagemagick
-      - ghostscript
-    state: present
 
 # flock evita sobreposicao: a 1a execucao processa todo o acervo e pode passar de 24h;
 # as seguintes so pegam bitstreams ainda nao filtrados (rapidas).
