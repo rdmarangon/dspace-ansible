@@ -26,3 +26,8 @@ frontend_host_ip:   "{{ hostvars[groups['frontend'][0]]['ansible_host'] }}"
 
 geoip_enabled:      true
 geoip_dir:          "{{ dspace_install_dir }}/geoip"
+
+# filter-media: gera miniaturas (bundle THUMBNAIL) e extrai texto dos PDFs
+# (bundle TEXT) que alimenta a busca full-text no Solr. Roda via cron noturno.
+filter_media_enabled:   true
+filter_media_cron_hour: "4"

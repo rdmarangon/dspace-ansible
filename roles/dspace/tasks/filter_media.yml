@@ -1,0 +1,25 @@
+---
+# filter-media gera miniaturas (bundle THUMBNAIL) a partir da 1a pagina do PDF/imagens
+# e extrai o texto (bundle TEXT) que alimenta a busca full-text no Solr. Nao roda no
+# deposito -- e um processo batch, por isso itens novos ficam sem miniatura ate rodar.
+# https://wiki.lyrasis.org/display/DSDOC9x/Mediafilters+for+Transforming+DSpace+Content
+
+- name: instala ImageMagick e Ghostscript (miniatura de PDF)
+  apt:
+    name:
+      - imagemagick
+      - ghostscript
+    state: present
+
+# flock evita sobreposicao: a 1a execucao processa todo o acervo e pode passar de 24h;
+# as seguintes so pegam bitstreams ainda nao filtrados (rapidas).
+- name: configura cron noturno do filter-media
+  cron:
+    name: "dspace filter-media (miniaturas + texto full-text)"
+    minute: "0"
+    hour: "{{ filter_media_cron_hour }}"
+    user: "{{ dspace_user }}"
+    job: >-
+      /usr/bin/flock -n /tmp/dspace-filter-media.lock
+      env JAVA_HOME={{ java_home }} {{ dspace_install_dir }}/bin/dspace filter-media
+      >> {{ dspace_install_dir }}/log/filter-media-cron.log 2>&1

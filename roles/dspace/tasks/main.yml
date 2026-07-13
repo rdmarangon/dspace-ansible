@@ -6,3 +6,5 @@
 - import_tasks: solr_cores.yml
 - import_tasks: geoip.yml
   when: geoip_enabled | default(false)
+- import_tasks: filter_media.yml
+  when: filter_media_enabled | default(true)

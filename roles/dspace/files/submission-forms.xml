@@ -842,9 +842,10 @@
                 <dc-qualifier>cnpq</dc-qualifier>
                 <repeatable>true</repeatable>
                 <label>Áreas de conhecimento de acordo com a tabela do CNPq</label>
-                <input-type>textarea</input-type>
-                <hint></hint>
+                <input-type>onebox</input-type>
+                <hint>Selecione a(s) área(s) na árvore de categorias do CNPq usando o ícone de árvore ao lado do campo.</hint>
                 <required>Campo obrigatório.</required>
+                <vocabulary>srsc</vocabulary>
             </field>
         </row>
         <row>

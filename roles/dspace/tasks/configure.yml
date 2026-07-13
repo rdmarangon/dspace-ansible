@@ -36,4 +36,5 @@
   loop:
     - submission-forms.xml
     - item-submission.xml
+    - default.license
   notify: restart tomcat

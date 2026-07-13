@@ -314,6 +314,14 @@ Lattes, CNPq etc.) vive aí. Alterações exigem `restart tomcat`.
 
 Controlado pela variável `geoip_enabled` em `inventory/group_vars/backend.yml` (padrão: `true`). Quando ativado, o Ansible baixa a base DB-IP do mês atual, configura o `local.cfg` automaticamente e cria um cron mensal no servidor backend para manter a base atualizada.
 
+### filter-media (miniaturas e busca full-text)
+
+Controlado por `filter_media_enabled` em `inventory/group_vars/backend.yml` (padrão: `true`). Instala ImageMagick + Ghostscript e cria um cron noturno rodando `dspace filter-media`, que gera as miniaturas (bundle `THUMBNAIL`) e extrai o texto dos PDFs (bundle `TEXT`) — este último é o que alimenta a **busca por conteúdo** no Solr. Não roda no depósito: itens novos ficam sem miniatura até o cron passar. A primeira execução processa todo o acervo (demorada); as seguintes só pegam o que é novo. Para rodar sob demanda:
+
+```bash
+sudo -u dspace /dspace/bin/dspace filter-media
+```
+
 ---
 
 ## Estrutura do projeto
@@ -353,8 +361,9 @@ ansible/dspace/
     │   │   ├── configure.yml      ← deploy local.cfg + forms de submissão, tomcat no grupo dspace
     │   │   └── geoip.yml          ← DB-IP download, symlink, cron (geoip_enabled)
     │   ├── files/
-    │   │   ├── submission-forms.xml  ← perfil de submissão UFJF (campos, dropdowns, type-bind)
-    │   │   └── item-submission.xml   ← passos do depósito (inclui embargo/access)
+    │   │   ├── submission-forms.xml  ← perfil de submissão UFJF (campos, dropdowns, type-bind, vocabulário CNPq)
+    │   │   ├── item-submission.xml   ← passos do depósito (inclui embargo/access e Creative Commons)
+    │   │   └── default.license       ← licença de depósito (PT-BR)
     │   └── templates/
     │       └── local.cfg.j2       ← configuração principal do DSpace (db, solr, mail, urls)
     └── dspace_ui/
