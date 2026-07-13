@@ -173,11 +173,12 @@ O que o playbook faz, na ordem:
 1. Para o Tomcat
 2. Dropa o banco existente e recria vazio
 3. Importa o dump com `pg_restore`
-4. Roda `dspace database migrate ignored`
-5. Roda `index-discovery -b` (pode levar horas em acervos grandes)
-6. Roda `oai import`
-7. Gera sitemaps
-8. Sobe o Tomcat
+4. Normaliza as URIs de handle: reescreve hosts internos/de teste (`dump_rewrite_internal_hosts` em `all.yml`) para `dspace_ui_url`, preservando referências a repositórios externos
+5. Roda `dspace database migrate ignored`
+6. Roda `index-discovery -b` (pode levar horas em acervos grandes)
+7. Roda `oai import`
+8. Gera sitemaps
+9. Sobe o Tomcat
 
 Após concluir, sincronize os sitemaps para o frontend:
 

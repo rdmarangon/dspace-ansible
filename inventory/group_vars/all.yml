@@ -13,6 +13,13 @@ dspace_name:        "Repositório Institucional UFJF"
 dspace_server_url:  "https://{{ dspace_hostname }}/server"
 dspace_ui_url:      "https://{{ dspace_hostname }}"
 
+# Hosts internos/de teste que podem ter sido carimbados nas URIs de handle
+# durante a migracao. O restore_dump.yml reescreve esses para {{ dspace_ui_url }},
+# preservando referencias a repositorios externos (ufsc, ufrn, etc).
+dump_rewrite_internal_hosts:
+  - "http://localhost:4000"
+  - "https://testedspace.ufjf.br"
+
 mail_server:        "smtp.cgco.ufjf.br"
 mail_port:          25
 mail_admin:         "admin@repositorio.ufjf.br"

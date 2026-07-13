@@ -77,7 +77,8 @@ feedback.recipient = {{ mail_admin }}
 ##########################
 # HANDLE                 #
 ##########################
-handle.canonical.prefix = {{ dspace_server_url }}/handle/
+# URI publica "limpa" (frontend), sem /server. Vira a Permanent URI dos itens.
+handle.canonical.prefix = {{ dspace_ui_url }}/handle/
 
 {% if geoip_enabled | default(false) %}
 ##########################

@@ -88,6 +88,31 @@
         path: "{{ dump_dest }}"
         state: absent
 
+    # As URIs de handle sao carimbadas com o host do ambiente onde o dump foi gerado
+    # (ex.: testedspace/localhost da migracao). Normaliza para a URL de producao,
+    # preservando referencias a repositorios externos (so mexe nos hosts internos).
+    - name: normaliza URIs de handle internas para {{ dspace_ui_url }}
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: "{{ db_name }}"
+        query: >-
+          UPDATE metadatavalue
+          SET text_value = replace(text_value, %(from)s, %(to)s)
+          WHERE text_value LIKE %(like)s
+        named_args:
+          from: "{{ item }}/handle/"
+          to: "{{ dspace_ui_url }}/handle/"
+          like: "{{ item }}/handle/%"
+      loop: "{{ dump_rewrite_internal_hosts }}"
+      register: uri_rewrite
+
+    - name: resumo da normalizacao de URIs
+      debug:
+        msg: "{{ item.item }}/handle/ -> {{ dspace_ui_url }}/handle/ : {{ item.rowcount }} linhas"
+      loop: "{{ uri_rewrite.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
 - name: migra schema e reconstroi indices
   hosts: backend
   vars_files:
