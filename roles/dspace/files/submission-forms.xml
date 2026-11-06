@@ -114,6 +114,18 @@
         <row>
             <field>
                 <dc-schema>dc</dc-schema>
+                <dc-element>rights</dc-element>
+                <dc-qualifier>uri</dc-qualifier>
+                <repeatable>false</repeatable>
+                <label>Licença Creative Commons</label>
+                <input-type value-pairs-name="cc_licenses">dropdown</input-type>
+                <hint>Selecione a licença Creative Commons apropriada para este item.</hint>
+                <required>&lt;font color="red"&gt;&lt;strong&gt;CAMPO OBRIGATÓRIO:&lt;/strong&gt; Selecione uma licença Creative Commons.&lt;/font&gt;</required>
+            </field>
+        </row>
+        <row>
+            <field>
+                <dc-schema>dc</dc-schema>
                 <dc-element>date</dc-element>
                 <dc-qualifier>issued</dc-qualifier>
                 <repeatable>false</repeatable>
@@ -2641,6 +2653,25 @@
 			<pair>
 				<displayed-value>Acesso Restrito</displayed-value>
 				<stored-value>Acesso Restrito</stored-value>
+			</pair>
+		</value-pairs>
+
+		<value-pairs value-pairs-name="cc_licenses" dc-term="rights">
+			<pair>
+				<displayed-value>Creative Commons Attribution 4.0 International (CC BY 4.0)</displayed-value>
+				<stored-value>https://creativecommons.org/licenses/by/4.0/</stored-value>
+			</pair>
+			<pair>
+				<displayed-value>Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)</displayed-value>
+				<stored-value>https://creativecommons.org/licenses/by-nc/4.0/</stored-value>
+			</pair>
+			<pair>
+				<displayed-value>Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</displayed-value>
+				<stored-value>https://creativecommons.org/licenses/by-sa/4.0/</stored-value>
+			</pair>
+			<pair>
+				<displayed-value>Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)</displayed-value>
+				<stored-value>https://creativecommons.org/licenses/by-nd/4.0/</stored-value>
 			</pair>
 		</value-pairs>
 

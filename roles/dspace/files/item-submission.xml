@@ -305,8 +305,10 @@
 
             <!-- <step id="extractionstep"/> -->
 
-            <!-- UFJF: passo de licenca Creative Commons apos o upload (existia no repositorio antigo) -->
-            <step id="cclicense"/>
+            <!-- UFJF: passo cclicense desativado - a API legada do Creative Commons (api.creativecommons.org/rest/1.5)
+                 esta quebrada em producao. A licenca CC e escolhida no campo dc.rights.uri do formulario
+                 (value-pairs cc_licenses em submission-forms.xml). -->
+            <!-- <step id="cclicense"/> -->
 
             <!--Step will be to Sign off on the required DSpace License agreement -->
             <step id="license"/>
