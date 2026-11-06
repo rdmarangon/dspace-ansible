@@ -1,6 +1,6 @@
 # dspace-ansible
 
-Automação Ansible para deploy do DSpace 9 em ambiente bare-metal com três servidores.
+Automação Ansible para deploy do DSpace 10 em ambiente bare-metal com três servidores.
 
 ## Contexto: dois projetos, dois papéis
 
@@ -8,7 +8,7 @@ Este repositório e o `dspace-docker` trabalham em etapas distintas:
 
 | Projeto          | Papel                                                                                                        | Quando usar                          |
 | ---------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
-| `dspace-docker`  | **Migração** — sobe o ambiente Docker, recebe o dump 6.3, migra o schema 6.3 → 7.6 → 9.x e gera o dump final | Uma vez, antes do go-live            |
+| `dspace-docker`  | **Migração** — sobe o ambiente Docker, recebe o dump 6.3, migra o schema 6.3 → 7.6 → 10.x e gera o dump final | Uma vez, antes do go-live            |
 | `dspace-ansible` | **Produção** — provisiona os três servidores bare-metal e recebe o dump já migrado                           | Deploy inicial e manutenção contínua |
 
 O fluxo entre eles:
@@ -17,7 +17,7 @@ O fluxo entre eles:
 dspace-docker                              dspace-ansible
 ─────────────────────────────              ──────────────────────────────
  docker-compose-9.yml                       site.yml (provisiona servidores)
-   └─ migra schema 6.3→9.x                      └─ restore_dump.yml
+   └─ migra schema 6.3→10.x                      └─ restore_dump.yml
    └─ pg_dump -Fc dspace > dspace.dump  ──────►       └─ pg_restore + migrate ignored
                                                        └─ index-discovery -b
                                                        └─ oai import + sitemaps
@@ -33,7 +33,7 @@ O dump gerado pelo Docker é o único insumo que o Ansible precisa para colocar 
 ┌─────────────────┐      ┌───────────────────────────┐      ┌──────────────────────┐
 │   dspace-db     │      │     dspace-backend        │      │   dspace-frontend    │
 │                 │      │                           │      │                      │
-│  PostgreSQL 16+ │◄─────│  DSpace 9 (Tomcat 10)     │◄─────│  Angular SSR (Node)  │
+│  PostgreSQL 16+ │◄─────│  DSpace 10 (Tomcat 10)    │◄─────│  Angular SSR (Node)  │
 │  porta 5432     │      │  porta 8080               │      │  porta 4000          │
 │  acesso restrito│      │  + Solr 9.x               │      │  + nginx :80/:443    │
 │  ao backend     │      │  porta 8983 (localhost)   │      │  proxy reverso       │
@@ -143,7 +143,7 @@ ansible-playbook site.yml -i inventory/hosts-test.yml --ask-vault-pass
 
 ## Restaurar dump
 
-Este é o fluxo principal para colocar dados reais no DSpace 9.
+Este é o fluxo principal para colocar dados reais no DSpace 10.
 O playbook cuida de toda a sequência automaticamente.
 
 > **Migração completa requer dump + assetstore.** O banco contém apenas os metadados;
@@ -285,7 +285,7 @@ O `ant fresh_install` cria os diretórios de configuração em `/dspace/solr/` m
 
 ### pgcrypto
 
-DSpace 9 exige a extensão `pgcrypto` no banco. O role instala `postgresql-contrib` (que a fornece) e habilita a extensão com `CREATE EXTENSION pgcrypto` no banco `dspace`.
+DSpace 10 exige a extensão `pgcrypto` no banco. O role instala `postgresql-contrib` (que a fornece) e habilita a extensão com `CREATE EXTENSION pgcrypto` no banco `dspace`.
 
 ### Ambiente de teste: não publicar nada externamente
 
@@ -380,5 +380,5 @@ ansible/dspace/
 
 ## Referências
 
-- [DSpace 9.x Installation Guide](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace)
+- [DSpace 10.x Installation Guide](https://wiki.lyrasis.org/display/DSDOC10x/Installing+DSpace)
 - [Apache Solr Installation](https://solr.apache.org/guide/solr/latest/deployment-guide/installing-solr.html)

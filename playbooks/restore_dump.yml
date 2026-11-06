@@ -1,5 +1,5 @@
 ---
-# Restaura dump do DSpace no banco e migra o schema para DSpace 9.
+# Restaura dump do DSpace no banco e migra o schema para DSpace 10.
 #
 # Pre-requisito: o dump ja deve estar no formato final desejado
 # (sem /jspui, com URL correta, etc).
@@ -119,7 +119,7 @@
     - ../vault.yml
   tasks:
     # "ignored" permite migrar mesmo com migrations de versoes anteriores no banco
-    - name: migra schema do banco para DSpace 9
+    - name: migra schema do banco para DSpace 10
       become_user: "{{ dspace_user }}"
       command: "{{ dspace_install_dir }}/bin/dspace database migrate ignored"
       environment:

@@ -1,6 +1,6 @@
 ---
 node_major_version:       20
-dspace_angular_version:   "dspace-9_x"
+dspace_angular_version:   "dspace-10.1"
 dspace_angular_src:       "/opt/dspace-angular"
 dspace_ui_port:           4000
 dspace_ui_service:        "dspace-ui"
